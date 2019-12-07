@@ -1,0 +1,246 @@
+/************************************************************
+Author:--------------Kyle Santos, Kelsie Barnett
+School:--------------Fanshawe College
+Program:-------------Electrical Engineering Technology
+Project:-------------Capstone Project-Lazy Roller
+Date:----------------December 2,2019
+Program Coordinator: Brad Smith
+Teacher:-------------Martin Volkening
+Adviser:-------------Chris Talbot
+*************************************************************/
+
+#include "mbed.h"
+#include "TextLCD.h"
+#include "time.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAXVALUE 60200
+
+DigitalIn rfRemoteB(p8);    //B button
+DigitalIn rfRemoteD(p9);    //D button
+DigitalIn rfRemoteA(p10);   //A button
+DigitalIn rfRemoteC(p11);   //C button
+
+TextLCD lcd(p14,p16,p17,p18,p19,p20);
+
+DigitalOut MotorB_Out (p21);  //Motor B
+DigitalOut MotorB2_Out (p22); 
+DigitalOut MotorA_Out (p23);  //Motor A
+DigitalOut MotorA2_Out (p24);
+
+PwmOut PWMA(p26);         //PWM For Motor A
+PwmOut PWMB(p25);		  //PWM FOR Motor B
+
+int power=0;              //Start program with power on
+int speed=0;              //speeds usable from the user
+int mainmenu=0;           //return to main menu
+int menu=0;               //seperate menus able to navigate through on the lcd
+
+
+/************************************************************
+Author:--------------Kyle Santos, Kelsie Barnett
+School:--------------Fanshawe College
+Program:-------------Electrical Engineering Technology
+Project:-------------Capstone Project-Lazy Roller
+Date:----------------December 2,2019
+Program Coordinator: Brad Smith
+Teacher:-------------Martin Volkening
+Adviser:-------------Chris Talbot
+Title:---------------speedLimits
+Function:------------Speed Limits to control the users fastest
+speed.
+*************************************************************/
+void speedLimits();
+	{
+	if((rfRemoteA==1)&&(menu==1))
+            {
+            speed++;
+            if(speed>2)
+                {
+                speed=3;
+                }
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Your Speed");
+            lcd.locate(1,1);
+            lcd.printf("Speed Level:%d",speed);
+            wait(1);  
+            }
+            
+     if(speed==0)
+        {
+        PWMA.write(0.0f);
+        PWMB.write(0.0f);
+        }
+     
+     if(speed==1)
+        {
+        MotorB_Out=1;
+        MotorB2_Out=0;
+        MotorA_Out=0;
+        MotorA2_Out=1; 
+        
+        PWMA.write(0.30f);
+        PWMB.write(0.30f);
+        }
+     if(speed==2)
+        {
+        MotorB_Out=1;
+        MotorB2_Out=0;
+        MotorA_Out=0;
+        MotorA2_Out=1; 
+        
+        PWMA.write(0.40f);
+        PWMB.write(0.40f);  
+        }
+     if(speed==3)
+        {
+        MotorB_Out=1;
+        MotorB2_Out=0;
+        MotorA_Out=0;
+        MotorA2_Out=1; 
+        
+        PWMA.write(0.55f);
+        PWMB.write(0.55f);
+        }
+        
+     if((rfRemoteC==1)&&(menu==1))
+            {
+            speed--;
+            if(speed<1)
+                {
+                speed=0;
+                }
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Your Speed");
+            lcd.locate(1,1);
+            lcd.printf("Speed Level:%d",speed);
+            wait(1);  
+            }
+	}
+	
+/************************************************************
+Author:--------------Kyle Santos, Kelsie Barnett
+School:--------------Fanshawe College
+Program:-------------Electrical Engineering Technology
+Project:-------------Capstone Project-Lazy Roller
+Date:----------------December 2,2019
+Program Coordinator: Brad Smith
+Teacher:-------------Martin Volkening
+Adviser:-------------Chris Talbot
+title:---------------batteryRemaining
+Function:------------Display battery remaining on the LCD screen
+using the voltage divider circuit
+*************************************************************/	
+void batteryRemaining();
+	{
+	double BCD = battery.read_u16();
+	double voltageRead=100-((BCD/MAXVALUE)*2.0289);     //Voltage divider with resistances at 560 ohms and 820 ohms
+	
+	lcd.cls();
+	lcd.locate(0,0);
+	lcd.printf("Battery Left");
+	lcd.locate(0,1);
+	lcd.printf("%.2f Percent",voltageRead);
+	}
+	
+
+
+/************************************************************
+Author:--------------Kyle Santos, Kelsie Barnett
+School:--------------Fanshawe College
+Program:-------------Electrical Engineering Technology
+Project:-------------Capstone Project-Lazy Roller
+Date:----------------December 2,2019
+Program Coordinator: Brad Smith
+Teacher:-------------Martin Volkening
+Adviser:-------------Chris Talbot
+title:---------------Main
+*************************************************************/		
+int main() 
+{
+PWMA.period_ms(1.0f);
+PWMA.write(0.30f);        
+PWMB.period_ms(1.0f);
+PWMB.write(0.30f);
+
+     while(1)
+     {
+	 speedLimits();
+	 batteryRemaining();
+     if(rfRemoteD==1)
+            {
+            power=1;
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Lazy Roller");
+            lcd.locate(1,1);
+            lcd.printf("Powering On");
+            wait(3);
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Lazy Roller");
+            lcd.locate(1,1);
+            lcd.printf("Main Menu");
+            wait(3);
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Press B");
+            lcd.locate(1,1);
+            lcd.printf("For Menu");
+            }
+    if((rfRemoteB==1)&&(power==1))
+            {
+            mainmenu=1;
+            menu=1;
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Select  Speed");
+            lcd.locate(0,1);
+            lcd.printf("        Battery");
+            wait(1);
+            }
+    if((rfRemoteA==1)&&(mainmenu==1)&&(menu==1))
+            {
+            lcd.cls();
+            menu++;
+            lcd.locate(0,0);
+            lcd.printf("Select->Speed");
+            lcd.locate(0,1);
+            lcd.printf("        Battery");
+            wait(1);
+            }
+    if((rfRemoteA==1)&&(mainmenu==1)&&(menu==2))
+            {
+            lcd.cls();
+            menu++;
+            lcd.locate(0,0);
+            lcd.printf("Select  Speed");
+            lcd.locate(0,1);
+            lcd.printf("      ->Battery");
+            wait(1);
+            }
+    if(menu>2)
+        {
+        menu=1;
+        }
+    if((rfRemoteC==1)&&(menu==2))
+            {
+            lcd.cls();
+            lcd.locate(0,0);
+            lcd.printf("Your Speed");
+            lcd.locate(0,1);
+            lcd.printf("Speed Level:%d",speed);
+            wait(1);  
+            }
+            
+  
+    
+    }
+        
+            
+      
+}
